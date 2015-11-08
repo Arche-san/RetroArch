@@ -30,8 +30,8 @@ static const menu_ctx_driver_t *menu_ctx_drivers[] = {
 #if defined(HAVE_RMENU_XUI)
    &menu_ctx_rmenu_xui,
 #endif
-#if defined(HAVE_GLUI)
-   &menu_ctx_glui,
+#if defined(HAVE_MATERIALUI)
+   &menu_ctx_mui,
 #endif
 #if defined(HAVE_XMB)
    &menu_ctx_xmb,
@@ -115,22 +115,6 @@ void find_menu_driver(void)
    }
 }
 
-static void init_menu_fallback(void)
-{
-#ifdef HAVE_RGUI
-   settings_t *settings = config_get_ptr();
-   driver_t *driver     = driver_get_ptr();
-   int i = find_driver_index("menu_driver", "rgui");
-
-   if (i >= 0)
-   {
-      driver->menu_ctx = (const menu_ctx_driver_t*)menu_driver_find_handle(i);
-      if (settings)
-         strlcpy(settings->menu.driver, "rgui", sizeof(settings->menu.driver));
-   }
-#endif
-}
-
 menu_handle_t *menu_driver_get_ptr(void)
 {
    driver_t *driver = driver_get_ptr();
@@ -149,29 +133,12 @@ const menu_ctx_driver_t *menu_ctx_driver_get_ptr(void)
 
 void init_menu(void)
 {
-   const char *video_driver;
    driver_t *driver     = driver_get_ptr();
 
    if (driver->menu)
       return;
 
    find_menu_driver();
-
-   video_driver = menu_video_get_ident();
-
-   switch (driver->menu_ctx->type)
-   {
-      case MENU_VIDEO_DRIVER_GENERIC:
-         break;
-      case MENU_VIDEO_DRIVER_DIRECT3D:
-         if (video_driver && (strcmp(video_driver, "d3d") != 0))
-            init_menu_fallback();
-         break;
-      case MENU_VIDEO_DRIVER_OPENGL:
-         if (video_driver && (strcmp(video_driver, "gl") != 0))
-            init_menu_fallback();
-         break;
-   }
 
    if (!(driver->menu = (menu_handle_t*)menu_init(driver->menu_ctx)))
       retro_fail(1, "init_menu()");
@@ -379,7 +346,6 @@ bool menu_driver_load_image(void *data, menu_image_type_t type)
    return false;
 }
 
-
 bool menu_environment_cb(menu_environ_cb_t type, void *data)
 {
    const menu_ctx_driver_t *driver = menu_ctx_driver_get_ptr();
@@ -392,4 +358,17 @@ bool menu_environment_cb(menu_environ_cb_t type, void *data)
    }
 
    return false;
+}
+
+int menu_driver_pointer_tap(unsigned x, unsigned y, unsigned ptr,
+      menu_file_list_cbs_t *cbs,
+      menu_entry_t *entry, unsigned action)
+{
+   int ret = 0;
+   const menu_ctx_driver_t *driver = menu_ctx_driver_get_ptr();
+
+   if (driver->pointer_tap)
+      ret = driver->pointer_tap(x, y, ptr, cbs, entry, action);
+
+   return ret;
 }

@@ -19,11 +19,14 @@
 
 #include "../input/input_driver.h"
 #include "../input/keyboard_line.h"
-#include "../libretro.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MENU_MAX_BUTTONS 219
+#define MENU_MAX_AXES    32
+#define MENU_MAX_HATS    4
 
 enum menu_action
 {
@@ -46,17 +49,6 @@ enum menu_action
    MENU_ACTION_POINTER_PRESSED
 };
 
-enum menu_mouse_action
-{
-   MOUSE_ACTION_NONE = 0,
-   MOUSE_ACTION_BUTTON_L,
-   MOUSE_ACTION_BUTTON_L_TOGGLE,
-   MOUSE_ACTION_BUTTON_L_SET_NAVIGATION,
-   MOUSE_ACTION_BUTTON_R,
-   MOUSE_ACTION_WHEEL_UP,
-   MOUSE_ACTION_WHEEL_DOWN
-};
- 
 enum menu_input_pointer_state
 {
    MENU_POINTER_X_AXIS = 0,
@@ -97,13 +89,13 @@ enum menu_input_ctl_state
    MENU_INPUT_CTL_SEARCH_START
 };
 
-
 enum menu_input_bind_mode
 {
    MENU_INPUT_BIND_NONE,
    MENU_INPUT_BIND_SINGLE,
    MENU_INPUT_BIND_ALL
 };
+
 
 void menu_input_key_event(bool down, unsigned keycode, uint32_t character,
       uint16_t key_modifiers);
@@ -125,7 +117,7 @@ void menu_input_st_string_callback(void *userdata, const char *str);
 
 void menu_input_st_cheat_callback(void *userdata, const char *str);
 
-unsigned menu_input_frame_retropad(retro_input_t input, retro_input_t trigger_state, retro_input_t *devices_mask);
+unsigned menu_input_frame_retropad(retro_input_t input, retro_input_t trigger_state);
 
 void menu_input_post_iterate(int *ret, unsigned action);
 

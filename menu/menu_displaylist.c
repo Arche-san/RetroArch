@@ -36,6 +36,7 @@
 #include "../input/input_common.h"
 #include "../dir_list_special.h"
 #include "../string_list_special.h"
+#include "../cheevos.h"
 
 #ifdef __linux__
 #include "../frontend/drivers/platform_linux.h"
@@ -86,21 +87,20 @@ static void print_buf_lines(file_list_t *list, char *buf, int buf_size,
          if (settings)
          {
             char core_path[PATH_MAX_LENGTH];
-            char display_name[PATH_MAX_LENGTH] = {0};
+            char display_name[PATH_MAX_LENGTH];
             char *last = NULL;
 
             fill_pathname_join(core_path, settings->libretro_info_path,
                   line_start, sizeof(core_path));
 
-            (void)last;
-
             path_remove_extension(core_path);
             path_remove_extension(core_path);
-#ifdef ANDROID
             last = (char*)strrchr(core_path, '_');
             if (*last)
-               *last = '\0';
-#endif
+            {
+               if (strcmp(last, "_libretro"))
+                  *last = '\0';
+            }
             strlcat(core_path, ".info", sizeof(core_path));
 
             if (core_info_get_display_name(
@@ -310,17 +310,16 @@ static int menu_displaylist_parse_debug_info(menu_displaylist_info_t *info)
 
    /* Assume libretro directory exists and check if stat works */
    ret = path_is_directory(settings->libretro_directory);
-   snprintf(tmp, sizeof(tmp), "Test 1: stat directory... %s",  ret ? "passed" : "failed");
+   snprintf(tmp, sizeof(tmp), "- stat directory... %s",  ret ? "passed" : "failed");
    menu_entries_push(info->list, tmp, "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
 
    /* Try to create a "test" subdirectory on top of libretro directory */
-   fill_pathname_join(tmp, settings->libretro_directory, "test", PATH_MAX_LENGTH);
+   fill_pathname_join(tmp, settings->libretro_directory, ".retroarch", PATH_MAX_LENGTH);
    ret = path_mkdir(tmp);
-   snprintf(tmp, sizeof(tmp), "Test 2: create a directory... %s",  ret ? "passed" : "failed");
+   snprintf(tmp, sizeof(tmp), "- create a directory... %s",  ret ? "passed" : "failed");
    menu_entries_push(info->list, tmp, "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
-
 
    menu_entries_push(info->list, "", "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
@@ -329,31 +328,62 @@ static int menu_displaylist_parse_debug_info(menu_displaylist_info_t *info)
    menu_entries_push(info->list, "Savefile Directory", "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
    ret = path_is_directory(global->dir.savefile);
-   snprintf(tmp, sizeof(tmp), "Directory exists: %s",  ret ? "true" : "false");
+   snprintf(tmp, sizeof(tmp), "- directory name: %s", global->dir.savefile);
+   menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+   snprintf(tmp, sizeof(tmp), "- directory exists: %s",  ret ? "true" : "false");
    menu_entries_push(info->list, tmp, "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
 
    /* Check if save directory is writable */
-   fill_pathname_join(tmp, global->dir.savefile, "test", PATH_MAX_LENGTH);
+   fill_pathname_join(tmp, global->dir.savefile, ".retroarch", PATH_MAX_LENGTH);
    ret = path_mkdir(tmp);
-   snprintf(tmp, sizeof(tmp), "Directory writable: %s",  ret ? "true" : "false");
+   snprintf(tmp, sizeof(tmp), "- directory writable: %s",  ret ? "true" : "false");
    menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+
+   menu_entries_push(info->list, "", "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
 
    /* Check if state directory exists */
    menu_entries_push(info->list, "Savestate Directory", "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
    ret = path_is_directory(global->dir.savestate);
-   snprintf(tmp, sizeof(tmp), "Directory exists: %s",  ret ? "true" : "false");
+   snprintf(tmp, sizeof(tmp), "- directory name: %s", global->dir.savestate);
+   menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+   snprintf(tmp, sizeof(tmp), "- directory exists: %s",  ret ? "true" : "false");
    menu_entries_push(info->list, tmp, "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
 
    /* Check if save directory is writable */
-   fill_pathname_join(tmp, global->dir.savestate, "test", PATH_MAX_LENGTH);
+   fill_pathname_join(tmp, global->dir.savestate, ".retroarch", PATH_MAX_LENGTH);
    ret = path_mkdir(tmp);
-   snprintf(tmp, sizeof(tmp), "Directory writable: %s",  ret ? "true" : "false");
+   snprintf(tmp, sizeof(tmp), "- directory writable: %s",  ret ? "true" : "false");
    menu_entries_push(info->list, tmp, "",
          MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+
+   menu_entries_push(info->list, "", "",
+      MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+
+   /* Check if system directory exists */
+   menu_entries_push(info->list, "System Directory", "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+   ret = path_is_directory(settings->system_directory);
+   snprintf(tmp, sizeof(tmp), "- directory name: %s", settings->system_directory);
+   menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+   snprintf(tmp, sizeof(tmp), "- directory exists: %s",  ret ? "true" : "false");
+   menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+
+   /* Check if save directory is writable */
+   fill_pathname_join(tmp, settings->system_directory, ".retroarch", PATH_MAX_LENGTH);
+   ret = path_mkdir(tmp);
+   snprintf(tmp, sizeof(tmp), "- directory writable: %s",  ret ? "true" : "false");
+   menu_entries_push(info->list, tmp, "",
+         MENU_SETTINGS_CORE_INFO_NONE, 0, 0);
+
    return 0;
 }
 
@@ -1456,7 +1486,7 @@ static int deferred_push_video_shader_parameters_common(
 }
 #endif
 
-int menu_displaylist_parse_settings(void *data, menu_displaylist_info_t *info, 
+int menu_displaylist_parse_settings(void *data, menu_displaylist_info_t *info,
       const char *info_label, unsigned parse_type, bool add_empty_entry)
 {
    enum setting_type precond;
@@ -1468,7 +1498,7 @@ int menu_displaylist_parse_settings(void *data, menu_displaylist_info_t *info,
 
    if (!setting)
       return -1;
-   
+
    switch (parse_type)
    {
       case PARSE_GROUP:
@@ -1560,7 +1590,7 @@ int menu_displaylist_parse_settings(void *data, menu_displaylist_info_t *info,
       menu_entries_push(info->list, short_description,
             name, menu_setting_set_flags(setting), 0, 0);
       count++;
-      
+
 loop:
       switch (parse_type)
       {
@@ -1713,6 +1743,12 @@ static int menu_displaylist_parse_load_content_settings(menu_displaylist_info_t 
             menu_hash_to_str(MENU_LABEL_VALUE_SHADER_OPTIONS),
             menu_hash_to_str(MENU_LABEL_SHADER_OPTIONS),
             MENU_SETTING_ACTION, 0, 0);
+#endif
+#ifdef HAVE_CHEEVOS
+      menu_entries_push(info->list,
+         menu_hash_to_str(MENU_LABEL_VALUE_ACHIEVEMENT_LIST),
+         menu_hash_to_str(MENU_LABEL_ACHIEVEMENT_LIST),
+         MENU_SETTING_ACTION, 0, 0);
 #endif
    }
    else
@@ -2337,6 +2373,7 @@ int menu_displaylist_push_list(menu_displaylist_info_t *info, unsigned type)
       case DISPLAYLIST_OPTIONS_DISK:
       case DISPLAYLIST_SYSTEM_INFO:
       case DISPLAYLIST_DEBUG_INFO:
+      case DISPLAYLIST_ACHIEVEMENT_LIST:
       case DISPLAYLIST_CORES:
       case DISPLAYLIST_CORES_DETECTED:
       case DISPLAYLIST_CORES_UPDATER:
@@ -2579,8 +2616,6 @@ int menu_displaylist_push_list(menu_displaylist_info_t *info, unsigned type)
          ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_INPUT_AUTODETECT_ENABLE), PARSE_ONLY_BOOL, false);
          ret = menu_displaylist_parse_settings(menu, info,
-               menu_hash_to_str(MENU_LABEL_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW), PARSE_ONLY_BOOL, false);
-         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_INPUT_DESCRIPTOR_LABEL_SHOW), PARSE_ONLY_BOOL, false);
          ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_INPUT_DESCRIPTOR_HIDE_UNBOUND), PARSE_ONLY_BOOL, false);
@@ -2612,53 +2647,53 @@ int menu_displaylist_push_list(menu_displaylist_info_t *info, unsigned type)
          info->need_push    = true;
          break;
       case DISPLAYLIST_SETTINGS_ALL:
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_DRIVER_SETTINGS),          PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_VIDEO_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_AUDIO_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_INPUT_SETTINGS),   PARSE_ACTION, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_INPUT_HOTKEY_BINDS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_CORE_SETTINGS),            PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_CONFIGURATION_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_SAVING_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_LOGGING_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_FRAME_THROTTLE_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_REWIND_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_RECORDING_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_ONSCREEN_DISPLAY_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_OVERLAY_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_MENU_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_UI_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_MENU_FILE_BROWSER_SETTINGS),   PARSE_ONLY_GROUP, false);
          ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_ACCOUNTS_RETRO_ACHIEVEMENTS),  PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_CORE_UPDATER_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_NETWORK_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_PLAYLIST_SETTINGS),   PARSE_ACTION, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_USER_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_DIRECTORY_SETTINGS),   PARSE_ONLY_GROUP, false);
-         ret = menu_displaylist_parse_settings(menu, info, 
+         ret = menu_displaylist_parse_settings(menu, info,
                menu_hash_to_str(MENU_LABEL_VALUE_PRIVACY_SETTINGS),   PARSE_ONLY_GROUP, false);
          info->need_push    = true;
          break;
@@ -2900,6 +2935,15 @@ int menu_displaylist_push_list(menu_displaylist_info_t *info, unsigned type)
          info->need_push    = true;
          info->need_refresh = true;
          break;
+         
+#ifdef HAVE_CHEEVOS
+      case DISPLAYLIST_ACHIEVEMENT_LIST:
+         cheevos_populate_menu(info);
+         info->need_push    = true;
+         info->need_refresh = true;
+         break;
+#endif
+
       case DISPLAYLIST_CORES_SUPPORTED:
       case DISPLAYLIST_CORES_COLLECTION_SUPPORTED:
          info->need_sort    = true;

@@ -63,6 +63,10 @@ COMPATIBILITY
 #include "../compat/compat_strl.c"
 #endif
 
+#if defined(_WIN32) && !defined(_XBOX)
+#include "../compat/compat_posix_string.c"
+#endif
+
 #include "../libretro-common/compat/compat_fnmatch.c"
 #include "../libretro-common/memmap/memalign.c"
 
@@ -135,6 +139,9 @@ VIDEO CONTEXT
 #include "../gfx/drivers_context/vc_egl_ctx.c"
 #endif
 
+#ifdef HAVE_MENU
+#include "../menu/drivers_display/menu_display_gl.c"
+#endif
 
 #if defined(_WIN32) && !defined(_XBOX)
 #include "../gfx/drivers_context/wgl_ctx.c"
@@ -815,6 +822,7 @@ MENU
 #include "../menu/intl/menu_hash_pt.c"
 #include "../menu/intl/menu_hash_us.c"
 
+#include "../menu/drivers_display/menu_display_null.c"
 #include "../menu/drivers/null.c"
 #include "../menu/drivers/menu_generic.c"
 #endif
@@ -834,8 +842,8 @@ MENU
 #include "../menu/drivers/xmb.c"
 #endif
 
-#ifdef HAVE_GLUI
-#include "../menu/drivers/glui.c"
+#ifdef HAVE_MATERIALUI
+#include "../menu/drivers/materialui.c"
 #endif
 
 #ifdef HAVE_ZARCH

@@ -19,6 +19,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "libretro.h"
+#include "menu/menu_entries.h"
+
 typedef struct
 {
    int cheats_are_enabled;
@@ -27,7 +30,9 @@ typedef struct
 
 extern cheevos_globals_t cheevos_globals;
 
-int cheevos_load(const void *data, size_t size);
+int cheevos_load(const struct retro_game_info *info);
+
+void cheevos_populate_menu(menu_displaylist_info_t *info);
 
 void cheevos_test(void);
 

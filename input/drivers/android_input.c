@@ -858,13 +858,12 @@ static void android_input_poll(void *data)
    int ident;
    driver_t *driver                = driver_get_ptr();
    const input_driver_t *input     = driver ? (const input_driver_t*)driver->input : NULL;
-   enum input_device_type device   = INPUT_DEVICE_TYPE_NONE;
 
    if (!input)
       return;
 
    while ((ident =
-            ALooper_pollAll((input->key_pressed(driver->input_data, RARCH_PAUSE_TOGGLE, &device))
+            ALooper_pollAll((input->key_pressed(driver->input_data, RARCH_PAUSE_TOGGLE))
                ? -1 : 0,
                NULL, NULL, NULL)) >= 0)
    {
@@ -949,25 +948,20 @@ static int16_t android_input_state(void *data,
    return 0;
 }
 
-static bool android_input_key_pressed(void *data, int key, enum input_device_type *device)
+static bool android_input_key_pressed(void *data, int key)
 {
    android_input_t *android = (android_input_t*)data;
    settings_t *settings     = config_get_ptr();
 
    if (input_joypad_pressed(android->joypad,
          0, settings->input.binds[0], key))
-   {
-      *device = INPUT_DEVICE_TYPE_JOYPAD;
       return true;
-   }
 
    return false;
 }
 
-static bool android_input_meta_key_pressed(void *data, int key, enum input_device_type *device)
+static bool android_input_meta_key_pressed(void *data, int key)
 {
-   (void)device;
-
    return false;
 }
 

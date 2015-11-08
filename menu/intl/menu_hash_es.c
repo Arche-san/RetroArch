@@ -36,6 +36,22 @@ const char *menu_hash_to_str_es(uint32_t hash)
 
    switch (hash)
    {
+      case MENU_LABEL_VALUE_STATE_SLOT:
+         return "Ranura de guardado";
+      case MENU_LABEL_VALUE_ACCOUNTS_CHEEVOS_SETTINGS:
+         return "Cuenta Cheevos";
+      case MENU_LABEL_VALUE_ACCOUNTS_CHEEVOS_USERNAME:
+         return "Usuario";
+      case MENU_LABEL_VALUE_ACCOUNTS_CHEEVOS_PASSWORD:
+         return "Contraseña";
+      case MENU_LABEL_VALUE_ACCOUNTS_RETRO_ACHIEVEMENTS:
+         return "Retrologros";
+      case MENU_LABEL_VALUE_ACCOUNTS_LIST:
+         return "Cuentas";
+      case MENU_LABEL_VALUE_ACCOUNTS_LIST_END:
+         return "Enlace a lista de cuentas";
+      case MENU_LABEL_VALUE_DEBUG_PANEL_ENABLE:
+         return "Activar panel de depuración";
       case MENU_LABEL_VALUE_HELP_SCANNING_CONTENT:
          return "Buscar contenido";
       case MENU_LABEL_VALUE_HELP_AUDIO_VIDEO_TROUBLESHOOTING:
@@ -112,8 +128,19 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Preguntar";
       case MENU_LABEL_VALUE_PRIVACY_SETTINGS:
          return "Privacidad";
+#if 0
       case MENU_VALUE_HORIZONTAL_MENU: /* Don't change. Breaks everything. (Would be: "Menú horizontal") */
          return "Horizontal Menu";
+         /* Don't change these yet. Breaks everything. */
+      case MENU_VALUE_SETTINGS_TAB:
+         return "Pestaña de ajustes";
+      case MENU_VALUE_HISTORY_TAB:
+         return "Pestaña de historial";
+      case MENU_VALUE_ADD_TAB:
+         return "Añadir pestaña";
+      case MENU_VALUE_PLAYLISTS_TAB:
+         return "Pestaña de listas de reproducción";
+#endif
       case MENU_LABEL_VALUE_NO_SETTINGS_FOUND:
          return "No se ha encontrado una configuración.";
       case MENU_LABEL_VALUE_NO_PERFORMANCE_COUNTERS:
@@ -146,10 +173,10 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "RetroKeyboard";
       case MENU_LABEL_VALUE_AUDIO_BLOCK_FRAMES:
          return "Bloquear fotogramas";
-      case MENU_LABEL_VALUE_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW:
-         return "Mostrar etiquetas de descripción del autoconfigurado";
+      case MENU_LABEL_VALUE_INPUT_BIND_MODE:
+         return "Modo de asignación";
       case MENU_LABEL_VALUE_INPUT_DESCRIPTOR_LABEL_SHOW:
-         return "Mostrar etiquetas de descripción de la entrada del núcleo";
+         return "Mostrar etiquetas de descripción de la entrada";
       case MENU_LABEL_VALUE_INPUT_DESCRIPTOR_HIDE_UNBOUND:
          return "Ocultar descripciones sin asignar de la entrada del núcleo";
       case MENU_LABEL_VALUE_VIDEO_FONT_ENABLE:
@@ -206,8 +233,8 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Activar grabación";
       case MENU_LABEL_VALUE_VIDEO_GPU_RECORD:
          return "Activar grabación de GPU";
-      case MENU_LABEL_VALUE_RECORD_PATH: /* FIXME/UPDATE */
-         return "Carpeta de grabación";
+      case MENU_LABEL_VALUE_RECORD_PATH:
+         return "Carpeta de salida";
       case MENU_LABEL_VALUE_RECORD_USE_OUTPUT_DIRECTORY:
          return "Usar carpeta de salida";
       case MENU_LABEL_VALUE_RECORD_CONFIG:
@@ -238,8 +265,8 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Carpeta de sistema/BIOS";
       case MENU_LABEL_VALUE_CHEAT_DATABASE_PATH:
          return "Carpeta de archivos de trucos";
-      case MENU_LABEL_VALUE_CACHE_DIRECTORY: /* FIXME/UPDATE */
-         return "Carpeta de extracción";
+      case MENU_LABEL_VALUE_CACHE_DIRECTORY:
+         return "Carpeta de caché";
       case MENU_LABEL_VALUE_AUDIO_FILTER_DIR:
          return "Carpeta de filtros de sonido";
       case MENU_LABEL_VALUE_VIDEO_SHADER_DIR:
@@ -528,6 +555,8 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Ajustes";
       case MENU_LABEL_VALUE_QUIT_RETROARCH:
          return "Abandonar RetroArch";
+      case MENU_LABEL_VALUE_SHUTDOWN:
+         return "Apagar";
       case MENU_LABEL_VALUE_HELP:
          return "Ayuda";
       case MENU_LABEL_VALUE_SAVE_NEW_CONFIG:
@@ -548,6 +577,8 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Extraer automáticamente el archivo descargado";
       case MENU_LABEL_VALUE_SYSTEM_INFORMATION:
          return "Información del sistema";
+      case MENU_LABEL_VALUE_DEBUG_INFORMATION:
+         return "Información de depuración";
       case MENU_LABEL_VALUE_ONLINE_UPDATER:
          return "Actualizador en línea";
       case MENU_LABEL_VALUE_CORE_INFORMATION:
@@ -606,8 +637,8 @@ const char *menu_hash_to_str_es(uint32_t hash)
          return "Fondo de pantalla dinámico";
       case MENU_LABEL_VALUE_BOXART:
          return "Mostrar carátula";
-      case MENU_LABEL_VALUE_CORE_INPUT_REMAPPING_OPTIONS: /* FIXME/UPDATE */
-         return "Opciones de reasignación de entrada para el núcleo";
+      case MENU_LABEL_VALUE_CORE_INPUT_REMAPPING_OPTIONS:
+         return "Opciones de entrada del núcleo";
       case MENU_LABEL_VALUE_SHADER_OPTIONS:
          return "Opciones de shaders";
       case MENU_LABEL_VALUE_VIDEO_SHADER_PARAMETERS:
@@ -1000,7 +1031,8 @@ int menu_hash_get_help_es(uint32_t hash, char *s, size_t len)
          snprintf(s, len,
                "Bienvenido a RetroArch\n"
                "\n"
-               "Para más información dirígete a Ayuda.\n"
+               "Para más información ve al menú \n"
+			   "de Ayuda.\n"
                );
          break;
       case MENU_LABEL_INPUT_DRIVER:

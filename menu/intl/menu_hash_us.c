@@ -138,8 +138,6 @@ static const char *menu_hash_to_str_us_label(uint32_t hash)
          return "audio_block_frames";
       case MENU_LABEL_INPUT_BIND_MODE:
          return "input_bind_mode";
-      case MENU_LABEL_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW:
-         return "autoconfig_descriptor_label_show";
       case MENU_LABEL_INPUT_DESCRIPTOR_LABEL_SHOW:
          return "input_descriptor_label_show";
       case MENU_LABEL_INPUT_DESCRIPTOR_HIDE_UNBOUND:
@@ -576,6 +574,8 @@ static const char *menu_hash_to_str_us_label(uint32_t hash)
          return "core_updater_auto_extract_archive";
       case MENU_LABEL_DEBUG_INFORMATION:
          return "debug_information";
+      case MENU_LABEL_ACHIEVEMENT_LIST:
+         return "achievement_list";
       case MENU_LABEL_SYSTEM_INFORMATION:
          return "system_information";
       case MENU_LABEL_ONLINE_UPDATER:
@@ -822,10 +822,8 @@ const char *menu_hash_to_str_us(uint32_t hash)
          return "Block Frames";
       case MENU_LABEL_VALUE_INPUT_BIND_MODE:
          return "Bind Mode";
-      case MENU_LABEL_VALUE_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW:
-         return "Display Autoconfig Descriptor Labels";
       case MENU_LABEL_VALUE_INPUT_DESCRIPTOR_LABEL_SHOW:
-         return "Display Core Input Descriptor Labels";
+         return "Display Input Descriptor Labels";
       case MENU_LABEL_VALUE_INPUT_DESCRIPTOR_HIDE_UNBOUND:
          return "Hide Unbound Core Input Descriptors";
       case MENU_LABEL_VALUE_VIDEO_FONT_ENABLE:
@@ -1228,6 +1226,8 @@ const char *menu_hash_to_str_us(uint32_t hash)
          return "System Information";
       case MENU_LABEL_VALUE_DEBUG_INFORMATION:
          return "Debug Information";
+      case MENU_LABEL_VALUE_ACHIEVEMENT_LIST:
+         return "Achievement List";
       case MENU_LABEL_VALUE_ONLINE_UPDATER:
          return "Online Updater";
       case MENU_LABEL_VALUE_CORE_INFORMATION:

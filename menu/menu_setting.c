@@ -4977,24 +4977,10 @@ static bool setting_append_list_input_options(
          general_read_handler);
 
    CONFIG_BOOL(
-         settings->input.autoconfig_descriptor_label_show,
-         menu_hash_to_str(MENU_LABEL_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW),
-         menu_hash_to_str(MENU_LABEL_VALUE_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW),
-         true,
-         menu_hash_to_str(MENU_VALUE_OFF),
-         menu_hash_to_str(MENU_VALUE_ON),
-         group_info.name,
-         subgroup_info.name,
-         parent_group,
-         general_write_handler,
-         general_read_handler);
-   settings_data_list_current_add_flags(list, list_info, SD_FLAG_ADVANCED);
-
-   CONFIG_BOOL(
          settings->input.input_descriptor_label_show,
          menu_hash_to_str(MENU_LABEL_INPUT_DESCRIPTOR_LABEL_SHOW),
          menu_hash_to_str(MENU_LABEL_VALUE_INPUT_DESCRIPTOR_LABEL_SHOW),
-         input_descriptor_label_show,
+         true,
          menu_hash_to_str(MENU_VALUE_OFF),
          menu_hash_to_str(MENU_VALUE_ON),
          group_info.name,
@@ -5068,18 +5054,6 @@ static bool setting_append_list_input_options(
          general_read_handler);
    menu_settings_list_current_add_range(list, list_info, 1, 0, 1, true, false);
    settings_data_list_current_add_flags(list, list_info, SD_FLAG_ADVANCED);
-
-   CONFIG_UINT(
-         settings->input.bind_mode,
-         menu_hash_to_str(MENU_LABEL_INPUT_BIND_MODE),
-         menu_hash_to_str(MENU_LABEL_VALUE_INPUT_BIND_MODE),
-         0,
-         group_info.name,
-         subgroup_info.name,
-         parent_group,
-         general_write_handler,
-         general_read_handler);
-   menu_settings_list_current_add_range(list, list_info, 0, 2, 1, true, true);
 
    END_SUB_GROUP(list, list_info, parent_group);
 
@@ -5322,7 +5296,7 @@ static bool setting_append_list_menu_options(
          settings->menu.mouse.enable,
          menu_hash_to_str(MENU_LABEL_MOUSE_ENABLE),
          menu_hash_to_str(MENU_LABEL_VALUE_MOUSE_ENABLE),
-         false,
+         def_mouse_enable,
          menu_hash_to_str(MENU_VALUE_OFF),
          menu_hash_to_str(MENU_VALUE_ON),
          group_info.name,

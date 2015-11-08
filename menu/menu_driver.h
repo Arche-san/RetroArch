@@ -61,13 +61,6 @@ typedef enum
    MENU_HELP_LAST
 } menu_help_type_t;
 
-typedef enum
-{
-   MENU_VIDEO_DRIVER_GENERIC = 0,
-   MENU_VIDEO_DRIVER_OPENGL,
-   MENU_VIDEO_DRIVER_DIRECT3D
-} menu_video_driver_type_t;
-
 typedef struct
 {
    void *userdata;
@@ -101,6 +94,8 @@ typedef struct
 
    content_playlist_t *playlist;
    char db_playlist_file[PATH_MAX_LENGTH];
+
+   bool prevent_populate; /* xmb hack */
 } menu_handle_t;
 
 typedef struct menu_ctx_driver
@@ -140,14 +135,16 @@ typedef struct menu_ctx_driver
          uint32_t label_hash, uint32_t menu_label_hash);
    bool  (*load_image)(void *data, menu_image_type_t type);
    const char *ident;
-   menu_video_driver_type_t type;
    int (*environ_cb)(menu_environ_cb_t type, void *data);
+   int (*pointer_tap)(unsigned x, unsigned y, unsigned ptr,
+         menu_file_list_cbs_t *cbs,
+         menu_entry_t *entry, unsigned action);
 } menu_ctx_driver_t;
 
 extern menu_ctx_driver_t menu_ctx_rmenu;
 extern menu_ctx_driver_t menu_ctx_rmenu_xui;
 extern menu_ctx_driver_t menu_ctx_rgui;
-extern menu_ctx_driver_t menu_ctx_glui;
+extern menu_ctx_driver_t menu_ctx_mui;
 extern menu_ctx_driver_t menu_ctx_xmb;
 extern menu_ctx_driver_t menu_ctx_zarch;
 extern menu_ctx_driver_t menu_ctx_null;
@@ -227,6 +224,10 @@ int menu_driver_bind_init(menu_file_list_cbs_t *cbs,
       const char *path, const char *label, unsigned type, size_t idx,
       const char *elem0, const char *elem1,
       uint32_t label_hash, uint32_t menu_label_hash);
+
+int menu_driver_pointer_tap(unsigned x, unsigned y, unsigned ptr,
+      menu_file_list_cbs_t *cbs,
+      menu_entry_t *entry, unsigned action);
 
 /* HACK */
 extern unsigned int rdb_entry_start_game_selection_ptr;

@@ -14,8 +14,8 @@
  *  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef __RARCH_SETTINGS_H__
-#define __RARCH_SETTINGS_H__
+#ifndef __RARCH_CONFIGURATION_H__
+#define __RARCH_CONFIGURATION_H__
 
 #include <stdint.h>
 #include <retro_miscellaneous.h>
@@ -243,7 +243,6 @@ typedef struct settings
       float overlay_scale;
 
       char autoconfig_dir[PATH_MAX_LENGTH];
-      bool autoconfig_descriptor_label_show;
       bool input_descriptor_label_show;
       bool input_descriptor_hide_unbound;
 
@@ -251,7 +250,6 @@ typedef struct settings
       
       unsigned menu_toggle_gamepad_combo;
       bool back_as_menu_toggle_enable;
-      unsigned bind_mode;
    } input;
 
    struct

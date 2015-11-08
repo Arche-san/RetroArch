@@ -24,6 +24,8 @@
 #include <file/file_path.h>
 #include <file/dir_list.h>
 #include <compat/posix_string.h>
+#include <gfx/math/matrix_4x4.h>
+#include <formats/image.h>
 #include <compat/strl.h>
 #include <retro_log.h>
 #include <retro_stat.h>
@@ -41,9 +43,10 @@
 #include "../menu_hash.h"
 #include "../../runloop_data.h"
 
-#include "../../gfx/video_thread_wrapper.h"
 #include "../../gfx/font_driver.h"
-#include "../../gfx/video_texture.h"
+
+#include "../../configuration.h"
+#include "../../runloop.h"
 
 #if 0
 #define ZARCH_DEBUG
@@ -200,20 +203,6 @@ static enum
    LAY_SETTINGS
 } layout = LAY_HOME;
 
-static const GRfloat zarch_vertexes[] = {
-   0, 0,
-   1, 0,
-   0, 1,
-   1, 1
-};
-
-static const GRfloat zarch_tex_coords[] = {
-   0, 1,
-   1, 1,
-   0, 0,
-   1, 0
-};
-
 static void zarch_zui_font(menu_handle_t *menu)
 {
    int font_size;
@@ -325,7 +314,8 @@ static void zarch_zui_draw_text(zui_t *zui, uint32_t color, int x, int y, const 
 {
    struct font_params params = {0};
 
-   /* need to use height-y because the gl font renderer uses a different mvp */
+   /* need to use height-y because the font renderer 
+    * uses a different model-view-projection (MVP). */
    params.x           = x / (float)zui->width;
    params.y           = (zui->height - y) / (float)zui->height;
    params.scale       = 1.0;
@@ -354,8 +344,8 @@ static void zarch_zui_push_quad(unsigned width, unsigned height,
 
    coords.color         = colors;
    coords.vertex        = vertex;
-   coords.tex_coord     = zarch_tex_coords;
-   coords.lut_tex_coord = zarch_tex_coords;
+   coords.tex_coord     = menu_display_get_tex_coords();
+   coords.lut_tex_coord = menu_display_get_tex_coords();
    coords.vertices      = 3;
 
    gfx_coord_array_add(ca, &coords, 3);
@@ -887,7 +877,7 @@ static int zarch_zui_load_content(zui_t *zui, unsigned i)
    return ret;
 }
 
-static void zarch_zui_draw_cursor(gl_t *gl, float x, float y)
+static void zarch_zui_draw_cursor(float x, float y)
 {
 }
 
@@ -979,9 +969,8 @@ static void zarch_frame(void)
    driver_t *driver     = driver_get_ptr();
    settings_t *settings = config_get_ptr();
    menu_handle_t *menu  = menu_driver_get_ptr();
-   gl_t *gl             = (gl_t*)video_driver_get_ptr(NULL);
    
-   if (!menu || !gl)
+   if (!menu)
       return;
 
    (void)driver;
@@ -1044,34 +1033,33 @@ static void zarch_frame(void)
          break;
    }
 
-   /* fetch it again in case the pointer was invalidated by a core load */
-   gl                   = (gl_t*)video_driver_get_ptr(NULL);
-
    if (settings->menu.mouse.enable)
-      zarch_zui_draw_cursor(gl, zarch_zui_input_state(zui, MENU_ZARCH_MOUSE_X), zarch_zui_input_state(zui, MENU_ZARCH_MOUSE_Y));
+      zarch_zui_draw_cursor(zarch_zui_input_state(zui, MENU_ZARCH_MOUSE_X), zarch_zui_input_state(zui, MENU_ZARCH_MOUSE_Y));
          
-
-   gl->shader->use(gl, GL_SHADER_STOCK_BLEND);
 
    if (!zarch_zui_input_state(zui, MENU_ZARCH_PRESSED))
       zui->item.active = 0;
    else if (zui->item.active == 0)
       zui->item.active = -1;
 
-   menu_display_draw_frame(
+   menu_display_blend_begin();
+
+   menu_display_draw(
          0,
          0,
          zui->width,
          zui->height,
-         gl->shader, (struct gfx_coords*)&zui->ca,
-         &zui->mvp, true, zui->textures.white, zui->ca.coords.vertices,
+         (struct gfx_coords*)&zui->ca,
+         &zui->mvp, zui->textures.white,
          MENU_DISPLAY_PRIM_TRIANGLES);
 
-   menu_display_frame_background(menu, settings,
-         gl, zui->width, zui->height,
+   menu_display_blend_end();
+
+   menu_display_draw_bg(
+         zui->width, zui->height,
          zui->textures.bg.id, 0.75f, false,
          &coord_color[0],   &coord_color2[0],
-         &zarch_vertexes[0], &zarch_tex_coords[0], 4,
+         NULL, menu_display_get_tex_coords(), 4,
          MENU_DISPLAY_PRIM_TRIANGLESTRIP);
 
    menu_display_font_flush_block(zui->menu, driver->font_osd_driver);
@@ -1085,27 +1073,13 @@ static void *zarch_init(void)
 {
    int unused;
    zui_t *zui                              = NULL;
-   const video_driver_t *video_driver      = NULL;
-   menu_handle_t                     *menu = NULL;
    settings_t *settings                    = config_get_ptr();
-   gl_t *gl                                = (gl_t*)
-      video_driver_get_ptr(&video_driver);
-
-   if (video_driver != &video_gl || !gl)
-   {
-      RARCH_ERR("Cannot initialize GLUI menu driver: gl video driver is not active.\n");
-      return NULL;
-   }
-
-   if (settings->menu.mouse.enable)
-   {
-      RARCH_WARN("Forcing menu_mouse_enable=false\n");
-      settings->menu.mouse.enable = false;
-   }
-
-   menu                 = (menu_handle_t*)calloc(1, sizeof(*menu));
+   menu_handle_t *menu                     = (menu_handle_t*)calloc(1, sizeof(*menu));
 
    if (!menu)
+      goto error;
+
+   if (!menu_display_driver_init_first())
       goto error;
 
    menu->userdata       = (zui_t*)calloc(1, sizeof(zui_t));
@@ -1114,6 +1088,12 @@ static void *zarch_init(void)
       goto error;
 
    zui                  = (zui_t*)menu->userdata;
+
+   if (settings->menu.mouse.enable)
+   {
+      RARCH_WARN("Forcing menu_mouse_enable=false\n");
+      settings->menu.mouse.enable = false;
+   }
 
    unused = 1000;
    menu_display_ctl(MENU_DISPLAY_CTL_SET_HEADER_HEIGHT, &unused);
@@ -1168,8 +1148,8 @@ static void zarch_free(void *data)
 
 static void zarch_context_bg_destroy(zui_t *zui)
 {
-   video_texture_unload((uintptr_t*)&zui->textures.bg.id);
-   video_texture_unload((uintptr_t*)&zui->textures.white);
+   menu_display_texture_unload((uintptr_t*)&zui->textures.bg.id);
+   menu_display_texture_unload((uintptr_t*)&zui->textures.white);
 }
 
 static void zarch_context_destroy(void)
@@ -1205,8 +1185,8 @@ static bool zarch_load_image(void *data, menu_image_type_t type)
          break;
       case MENU_IMAGE_WALLPAPER:
          zarch_context_bg_destroy(zui);
-         zui->textures.bg.id   = video_texture_load(data,
-               TEXTURE_BACKEND_OPENGL, TEXTURE_FILTER_MIPMAP_LINEAR);
+         zui->textures.bg.id   = menu_display_texture_load(data,
+               TEXTURE_FILTER_MIPMAP_LINEAR);
          break;
       case MENU_IMAGE_BOXART:
          break;
@@ -1224,8 +1204,8 @@ static void zarch_allocate_white_texture(zui_t *zui)
    ti.height = 1;
    ti.pixels = (uint32_t*)&data;
 
-   zui->textures.white = video_texture_load(&ti,
-         TEXTURE_BACKEND_OPENGL, TEXTURE_FILTER_NEAREST);
+   zui->textures.white = menu_display_texture_load(&ti,
+         TEXTURE_FILTER_NEAREST);
 }
 
 static void zarch_context_reset(void)
@@ -1384,6 +1364,6 @@ menu_ctx_driver_t menu_ctx_zarch = {
    NULL,
    zarch_load_image,
    "zarch",
-   MENU_VIDEO_DRIVER_OPENGL,
+   NULL,
    NULL,
 };

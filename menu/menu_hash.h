@@ -615,9 +615,6 @@ extern "C" {
 #define MENU_LABEL_INPUT_DESCRIPTOR_LABEL_SHOW                                 0x7eefdf52U
 #define MENU_LABEL_VALUE_INPUT_DESCRIPTOR_LABEL_SHOW                           0x78d0ea06U
 
-#define MENU_LABEL_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW                            0xde1d9571U
-#define MENU_LABEL_VALUE_AUTOCONFIG_DESCRIPTOR_LABEL_SHOW                      0x2748a1bcU
-
 #define MENU_LABEL_INPUT_DESCRIPTOR_HIDE_UNBOUND                               0x7051d870U
 #define MENU_LABEL_VALUE_INPUT_DESCRIPTOR_HIDE_UNBOUND                         0xc26ddec5U
 
@@ -705,8 +702,10 @@ extern "C" {
 #define MENU_LABEL_VALUE_LOAD_CONTENT_HISTORY                                  0x5b362286U
 #define MENU_LABEL_SYSTEM_INFORMATION                                          0x206ebf0fU
 #define MENU_LABEL_DEBUG_INFORMATION                                           0xeb0d82b1U
+#define MENU_LABEL_ACHIEVEMENT_LIST                                            0x7b90fc49U
 #define MENU_LABEL_VALUE_SYSTEM_INFORMATION                                    0xa62fd7f0U
 #define MENU_LABEL_VALUE_DEBUG_INFORMATION                                     0xd8569f92U
+#define MENU_LABEL_VALUE_ACHIEVEMENT_LIST                                      0xf066ac4aU
 #define MENU_LABEL_CORE_INFORMATION                                            0xb638e0d3U
 #define MENU_LABEL_VALUE_CORE_INFORMATION                                      0x781981b4U
 #define MENU_LABEL_VALUE_VIDEO_SHADER_PARAMETERS                               0x5ace99b3U

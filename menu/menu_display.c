@@ -17,10 +17,9 @@
 
 #include <queues/message_queue.h>
 #include <retro_miscellaneous.h>
+#include <gfx/math/matrix_4x4.h>
 
 #include "../config.def.h"
-#include "../gfx/font_renderer_driver.h"
-#include "../gfx/video_context_driver.h"
 #include "../gfx/video_thread_wrapper.h"
 
 #include "menu.h"
@@ -56,7 +55,17 @@ typedef struct menu_display
    unsigned header_height;
 
    msg_queue_t *msg_queue;
+   menu_display_ctx_driver_t *display_ctx;
 } menu_display_t;
+
+
+static menu_display_ctx_driver_t *menu_display_ctx_drivers[] = {
+#ifdef HAVE_OPENGL
+   &menu_display_ctx_gl,
+#endif
+   &menu_display_ctx_null,
+   NULL,
+};
 
 static menu_display_t  menu_display_state;
 
@@ -65,6 +74,14 @@ static menu_framebuf_t frame_buf_state;
 static menu_display_t *menu_display_get_ptr(void)
 {
    return &menu_display_state;
+}
+
+static menu_display_ctx_driver_t *menu_display_context_get_ptr(void)
+{
+   menu_display_t *disp = menu_display_get_ptr();
+   if (!disp)
+      return NULL;
+   return disp->display_ctx;
 }
 
 static menu_framebuf_t *menu_display_fb_get_ptr(void)
@@ -183,6 +200,58 @@ void menu_display_free_main_font(void)
       driver->font_osd_driver->free(disp->font.buf);
       disp->font.buf = NULL;
    }
+}
+
+static const char *menu_video_get_ident(void)
+{
+#ifdef HAVE_THREADS
+   settings_t *settings = config_get_ptr();
+
+   if (settings->video.threaded)
+      return rarch_threaded_video_get_ident();
+#endif
+
+   return video_driver_get_ident();
+}
+
+static bool menu_display_check_compatibility(enum menu_display_driver_type type)
+{
+   const char *video_driver = menu_video_get_ident();
+
+   switch (type)
+   {
+      case MENU_VIDEO_DRIVER_GENERIC:
+         return true;
+      case MENU_VIDEO_DRIVER_OPENGL:
+         if (!strcmp(video_driver, "gl"))
+            return true;
+         break;
+      case MENU_VIDEO_DRIVER_DIRECT3D:
+         if (!strcmp(video_driver, "d3d"))
+            return true;
+         break;
+   }
+
+   return false;
+}
+
+const bool menu_display_driver_init_first(void)
+{
+   unsigned i;
+   menu_display_t *disp = menu_display_get_ptr();
+
+   for (i = 0; menu_display_ctx_drivers[i]; i++)
+   {
+      if (!menu_display_check_compatibility(menu_display_ctx_drivers[i]->type))
+         continue;
+
+      RARCH_LOG("Found menu display driver: \"%s\".\n",
+            menu_display_ctx_drivers[i]->ident);
+      disp->display_ctx = menu_display_ctx_drivers[i];
+      return true;
+   }
+
+   return false;
 }
 
 bool menu_display_init_main_font(void *data,
@@ -477,6 +546,9 @@ void menu_display_timedate(char *s, size_t len, unsigned time_mode)
       case 3: /* Time (hours-minutes) */
          strftime(s, len, "%H:%M", localtime(&time_));
          break;
+      case 4: /* Date and time, without year and seconds */
+         strftime(s, len, "%d/%m %H:%M", localtime(&time_));
+         break;
    }
 }
 
@@ -486,110 +558,114 @@ void menu_display_msg_queue_push(const char *msg, unsigned prio, unsigned durati
    rarch_main_msg_queue_push(msg, prio, duration, flush);
 }
 
-#ifdef HAVE_OPENGL
-static GLenum menu_display_prim_to_gl_enum(enum menu_display_prim_type prim_type)
-{
-   switch (prim_type)
-   {
-      case MENU_DISPLAY_PRIM_TRIANGLESTRIP:
-         return GL_TRIANGLE_STRIP;
-      case MENU_DISPLAY_PRIM_TRIANGLES:
-         return GL_TRIANGLES;
-      case MENU_DISPLAY_PRIM_NONE:
-      default:
-         break;
-   }
 
-   return 0;
+void menu_display_blend_begin(void)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->blend_begin)
+      return;
+
+   menu_disp->blend_begin();
 }
 
-void menu_display_draw_frame(
-      unsigned x, unsigned y,
+void menu_display_blend_end(void)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->blend_end)
+      return;
+
+   if (menu_disp)
+      menu_disp->blend_end();
+}
+
+void menu_display_matrix_4x4_rotate_z(void *data, float rotation,
+      float scale_x, float scale_y, float scale_z, bool scale_enable)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp)
+      return;
+
+   menu_disp->matrix_4x4_rotate_z(data, rotation, scale_x, scale_y, scale_z, scale_enable);
+}
+
+unsigned menu_display_texture_load(void *data,
+      enum texture_filter_type  filter_type)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->texture_load)
+      return 0;
+
+   return menu_disp->texture_load(data, filter_type);
+}
+
+void menu_display_texture_unload(uintptr_t *id)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->texture_unload)
+      return;
+
+   menu_disp->texture_unload(id);
+}
+
+void menu_display_draw(unsigned x, unsigned y,
       unsigned width, unsigned height,
-      const void *shader_data,
       struct gfx_coords *coords,
-      math_matrix_4x4 *mat, 
-      bool blend,
-      GLuint texture,
+      void *matrix_data, 
+      uintptr_t texture,
+      enum menu_display_prim_type prim_type
+      )
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->draw)
+      return;
+
+   menu_disp->draw(x, y, width, height, coords, matrix_data, texture, prim_type);
+}
+
+void menu_display_draw_bg(
+      unsigned width, unsigned height,
+      uintptr_t texture,
+      float handle_alpha,
+      bool force_transparency,
+      float *color,
+      float *color2,
+      const float *vertex,
+      const float *tex_coord,
       size_t vertex_count,
       enum menu_display_prim_type prim_type
       )
 {
-   const shader_backend_t *shader = (const shader_backend_t*)shader_data;
-   driver_t *driver = driver_get_ptr();
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->draw_bg)
+      return;
 
-   /* TODO - edge case */
-   if (height <= 0)
-      height = 1;
-
-   glViewport(x, y, width, height);
-   glBindTexture(GL_TEXTURE_2D, texture);
-
-   shader->set_coords(coords);
-   shader->set_mvp(driver->video_data, mat);
-
-   if (blend)
-      glEnable(GL_BLEND);
-
-   glDrawArrays(menu_display_prim_to_gl_enum(prim_type), 0, vertex_count);
-
-   if (blend)
-      glDisable(GL_BLEND);
+   menu_disp->draw_bg(width, height, texture, handle_alpha, force_transparency, color,
+         color2, vertex, tex_coord, vertex_count, prim_type);
 }
 
-void menu_display_frame_background(
-      menu_handle_t *menu,
-      settings_t *settings,
-      gl_t *gl,
-      unsigned width,
-      unsigned height,
-      GLuint texture,
-      float handle_alpha,
-      bool force_transparency,
-      GRfloat *coord_color,
-      GRfloat *coord_color2,
-      const GRfloat *vertex,
-      const GRfloat *tex_coord,
-      size_t vertex_count,
-      enum menu_display_prim_type prim_type)
+void menu_display_restore_clear_color(void)
 {
-   struct gfx_coords coords;
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->restore_clear_color)
+      return;
 
-   global_t *global = global_get_ptr();
-
-   coords.vertices      = vertex_count;
-   coords.vertex        = vertex;
-   coords.tex_coord     = tex_coord;
-   coords.lut_tex_coord = tex_coord;
-   coords.color         = (const float*)coord_color;
-
-   if (gl->shader && gl->shader->use)
-      gl->shader->use(gl, GL_SHADER_STOCK_BLEND);
-
-   menu_display_ctl(MENU_DISPLAY_CTL_SET_VIEWPORT, NULL);
-
-   if ((settings->menu.pause_libretro
-      || !global->inited.main || (global->inited.core.type == CORE_TYPE_DUMMY))
-      && !force_transparency
-      && texture)
-      coords.color = (const float*)coord_color2;
-
-   menu_display_draw_frame(0, 0, width, height,
-         gl->shader, &coords,
-         &gl->mvp_no_rot, true, texture, vertex_count, prim_type);
-
-   gl->coords.color = gl->white_color_ptr;
+   menu_disp->restore_clear_color();
 }
-#endif
 
-const char *menu_video_get_ident(void)
+void menu_display_clear_color(float r, float g, float b, float a)
 {
-#ifdef HAVE_THREADS
-   settings_t *settings = config_get_ptr();
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->clear_color)
+      return;
 
-   if (settings->video.threaded)
-      return rarch_threaded_video_get_ident();
-#endif
+   menu_disp->clear_color(r, g, b, a);
+}
 
-   return video_driver_get_ident();
+const float *menu_display_get_tex_coords(void)
+{
+   menu_display_ctx_driver_t *menu_disp = menu_display_context_get_ptr();
+   if (!menu_disp || !menu_disp->get_tex_coords)
+      return NULL;
+
+   return menu_disp->get_tex_coords();
 }
