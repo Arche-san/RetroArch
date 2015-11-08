@@ -577,18 +577,19 @@ static void xmb_update_boxart(xmb_handle_t *xmb, unsigned i)
 {
    menu_entry_t entry;
    char path[PATH_MAX_LENGTH] = {0};
-   settings_t *settings       = config_get_ptr();
+   bool is_menu_type_valid = false;
 
    menu_entry_get(&entry, 0, i, NULL, true);
 
-   fill_pathname_join(path, settings->boxarts_directory, entry.path, sizeof(path));
-   strlcat(path, ".png", sizeof(path));
-
-   if (path_file_exists(path))
-      rarch_main_data_msg_queue_push(DATA_TYPE_IMAGE, path,
-            "cb_menu_boxart", 0, 1, true);
-   else if (xmb->depth == 1)
-      xmb->boxart = 0;
+   if(entry.type == MENU_FILE_RPL_ENTRY) {
+       is_menu_type_valid = true;
+       boxart_find_path(path, xmb->title_name, &entry, sizeof(path));
+   }
+    
+   if (is_menu_type_valid && path_file_exists(path))
+       rarch_main_data_msg_queue_push(DATA_TYPE_IMAGE, path, "cb_menu_boxart", 0, 1, true);
+    else if (xmb->depth == 1)
+        xmb->boxart = 0;
 }
 
 static void xmb_selection_pointer_changed(bool allow_animations)
